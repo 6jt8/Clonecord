@@ -1,0 +1,19 @@
+# Changelog
+
+## [1.0.0]
+
+- Clone channels (text, voice, announcement, stage, forum, media, categories) with permission overwrites
+- Clone roles with permissions, colors, hoist, mentionable, and role icons
+- Clone emojis referenced in role names, channel names/topics, onboarding prompts, and guild description
+- Clone stickers (PNG, APNG, Lottie, GIF) respecting boost-tier slot limits
+- Clone soundboard sounds respecting boost-tier slot limits
+- Clone onboarding prompts, default channels, and auto-fix @everyone permission issues
+- Clone server settings (name, icon, banner, splash, description, system channels, community features)
+- Clone channel position ordering in batched requests
+- Resume mode: add only missing items to an existing server
+- Overwrite mode: clear and re-clone an owned server
+- Adaptive rate-limit handling with concurrency downscaling on 429 errors
+- Animated progress pill notifications with cancel support
+- In-app update checker via GitHub Releases API
+- Discord error code translation with fatal error detection
+- Context menu integration ("Clone Server" in guild context menu and header popout)

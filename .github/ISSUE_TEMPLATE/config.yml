@@ -1,0 +1,5 @@
+blank_issues_enabled: false
+contact_links:
+    - name: Vencord Documentation
+      url: https://docs.vencord.dev/
+      about: Check the Vencord docs for general questions about Vencord itself.
