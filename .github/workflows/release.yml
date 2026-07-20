@@ -1,0 +1,139 @@
+name: Release
+
+on:
+    push:
+        tags: ["v*"]
+    workflow_dispatch:
+        inputs:
+            tag:
+                description: "Tag to release (e.g. v1.0.0)"
+                required: true
+                type: string
+
+permissions:
+    contents: write
+
+jobs:
+    release:
+        runs-on: ubuntu-latest
+        steps:
+            - uses: actions/checkout@v4
+              with:
+                  fetch-depth: 0
+
+            - name: Resolve tag
+              id: tag
+              run: |
+                  if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+                    TAG="${{ inputs.tag }}"
+                  else
+                    TAG="${GITHUB_REF#refs/tags/}"
+                  fi
+                  echo "tag=${TAG}" >> $GITHUB_OUTPUT
+                  echo "version=${TAG#v}" >> $GITHUB_OUTPUT
+
+            - name: Validate version match
+              run: |
+                  TAG_VERSION="${{ steps.tag.outputs.version }}"
+                  PKG_VERSION=$(node -p "require('./package.json').version")
+                  if [ "$TAG_VERSION" != "$PKG_VERSION" ]; then
+                    echo "::error::Tag version ($TAG_VERSION) does not match package.json ($PKG_VERSION)"
+                    exit 1
+                  fi
+
+            - name: Build plugin zip
+              id: build
+              run: |
+                  VERSION="${{ steps.tag.outputs.version }}"
+                  ZIP_NAME="Clonecord-v${VERSION}"
+                  STAGING_DIR="${ZIP_NAME}"
+
+                  mkdir -p "${STAGING_DIR}"
+
+                  cp index.tsx settings.ts store.ts types.ts constants.ts devTools.ts styles.css "${STAGING_DIR}/"
+
+                  for dir in core components utils; do
+                    if [ -d "$dir" ]; then
+                      mkdir -p "${STAGING_DIR}/${dir}"
+                      find "$dir" -name "*.ts" -o -name "*.tsx" | while read f; do
+                        mkdir -p "${STAGING_DIR}/$(dirname "$f")"
+                        cp "$f" "${STAGING_DIR}/$f"
+                      done
+                    fi
+                  done
+
+                  find "${STAGING_DIR}" -name "*.test.ts" -delete
+                  find "${STAGING_DIR}" -type d -name "__tests__" -exec rm -rf {} + 2>/dev/null || true
+
+                  zip -r "${ZIP_NAME}.zip" "${STAGING_DIR}"
+                  rm -rf "${STAGING_DIR}"
+
+                  echo "zip_name=${ZIP_NAME}.zip" >> $GITHUB_OUTPUT
+
+            - name: Generate release body
+              id: body
+              run: |
+                  TAG="${{ steps.tag.outputs.tag }}"
+
+                  PREV_TAG=$(git tag --sort=-creatordate | grep -A1 "^${TAG}$" | tail -1)
+                  if [ "$PREV_TAG" = "$TAG" ] || [ -z "$PREV_TAG" ]; then
+                    PREV_TAG=""
+                  fi
+
+                  BODY="## ${TAG} | Release\n\n"
+                  BODY+="**Changes:**\n"
+
+                  if [ -n "$PREV_TAG" ]; then
+                    COMMITS=$(git log "${PREV_TAG}..${TAG}" --pretty=format:"- %s" --no-merges)
+                  else
+                    COMMITS=$(git log "${TAG}" --pretty=format:"- %s" --no-merges)
+                  fi
+                  BODY+="${COMMITS}\n"
+
+                  if [ -n "$PREV_TAG" ]; then
+                    CONTRIBUTORS=$(git log "${PREV_TAG}..${TAG}" --format="%an|%ae" --no-merges \
+                      | grep -v "^6jt8|" \
+                      | sort -u)
+                  else
+                    CONTRIBUTORS=$(git log "${TAG}" --format="%an|%ae" --no-merges \
+                      | grep -v "^6jt8|" \
+                      | sort -u)
+                  fi
+
+                  if [ -n "$CONTRIBUTORS" ]; then
+                    BODY+="\n**Thanks to** "
+                    COUNT=$(echo "$CONTRIBUTORS" | wc -l)
+                    i=0
+                    while IFS='|' read -r name email; do
+                      USERNAME=$(echo "$email" | sed 's/@.*//')
+                      LINK="[${name}](https://github.com/${USERNAME})"
+                      i=$((i + 1))
+                      if [ $COUNT -eq 1 ]; then
+                        BODY+="${LINK}"
+                      elif [ $i -eq $COUNT ]; then
+                        BODY+="& ${LINK}"
+                      else
+                        BODY+="${LINK}, "
+                      fi
+                    done <<< "$CONTRIBUTORS"
+                    BODY+=" for contributing!\n"
+                  fi
+
+                  BODY+="\n**Full Changelog**: "
+                  if [ -n "$PREV_TAG" ]; then
+                    BODY+="https://github.com/${{ github.repository }}/compare/${PREV_TAG}...${TAG}"
+                  else
+                    BODY+="https://github.com/${{ github.repository }}/releases/tag/${TAG}"
+                  fi
+
+                  echo "body<<EOF" >> $GITHUB_OUTPUT
+                  echo -e "$BODY" >> $GITHUB_OUTPUT
+                  echo "EOF" >> $GITHUB_OUTPUT
+
+            - name: Create GitHub Release
+              uses: softprops/action-gh-release@v2
+              with:
+                  name: "${{ steps.tag.outputs.tag }} | Release"
+                  body: ${{ steps.body.outputs.body }}
+                  files: ${{ steps.build.outputs.zip_name }}
+                  tag_name: ${{ steps.tag.outputs.tag }}
