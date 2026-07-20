@@ -39,3 +39,6 @@ pnpm-debug.log*
 *.tmp
 *.temp
 .cache/
+
+# Wiki
+Clonecord.wiki/
