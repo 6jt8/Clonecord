@@ -79,17 +79,19 @@ git clone https://github.com/6jt8/Clonecord.git
 
 <p align="center">Rebuild Vencord, restart Discord, and enable <strong>Clonecord</strong> in <code>Settings > Vencord > Plugins</code>.</p>
 
-<p align="center">
-  <strong>Note:</strong> Do NOT commit <code>tsconfig.json</code> — it is gitignored because it overrides Vencord's module resolution.
-</p>
-
 <h2 align="center">Usage</h2>
 
 <p align="center">Right-click any server → <strong>Clone Server</strong> → choose what to clone → watch the progress bar.</p>
 
-<h2 align="center">Development</h2>
+<h2 align="center">Contributing</h2>
 
 <p align="center">See <a href="CONTRIBUTING.md">CONTRIBUTING.md</a> for setup instructions and guidelines.</p>
+
+<p align="center">
+  <a href="https://github.com/6jt8/Clonecord/graphs/contributors">
+    <img src="https://contrib.rocks/image?repo=6jt8/Clonecord" alt="Contributors"/>
+  </a>
+</p>
 
 <h2 align="center">Support</h2>
 
