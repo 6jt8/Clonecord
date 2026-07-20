@@ -68,16 +68,16 @@
 
 <h2 align="center">Installation</h2>
 
-<div align="center">
+<table align="center"><tr><td>
 
 ```bash
 cd path/to/Vencord/src/userplugins
 git clone https://github.com/6jt8/Clonecord.git
 ```
 
-Rebuild Vencord, restart Discord, and enable **Clonecord** in `Settings > Vencord > Plugins`.
+</td></tr></table>
 
-</div>
+<p align="center">Rebuild Vencord, restart Discord, and enable <strong>Clonecord</strong> in <code>Settings > Vencord > Plugins</code>.</p>
 
 <p align="center">
   <strong>Note:</strong> Do NOT commit <code>tsconfig.json</code> — it is gitignored because it overrides Vencord's module resolution.
